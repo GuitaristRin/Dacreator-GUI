@@ -749,7 +749,7 @@ class MainWindow(QMainWindow):
         self.lang_combo = QComboBox()
         self.lang_combo.addItems(["中文", "English", "日本語"])
         self.lang_combo.setCurrentText(self.settings.value("language", "中文"))
-        form_layout.addRow(self.create_label("🌐 语言（开发中）:"), self.lang_combo)
+        form_layout.addRow(self.create_label("🌐 语言:"), self.lang_combo)
         
         layout.addWidget(form_widget)
         layout.addStretch()
@@ -799,7 +799,7 @@ class MainWindow(QMainWindow):
             
             <h3 style='color: #2c3e50; margin-top: 30px; margin-bottom: 15px;'>👨‍💻 开发者</h3>
             <ul style='list-style-type: none; padding: 0;'>
-                <li style='margin-bottom: 10px;'>🎯 核心开发：Takahashi_Rinta</li>
+                <li style='margin-bottom: 10px;'>🎯 核心开发：TakahashiRinta</li>
                 <li style='margin-bottom: 10px;'>🎨 GUI设计：JustNacho</li>
                 <li style='margin-bottom: 10px;'>🙏 特别感谢：ArcadeZone社区</li>
             </ul>
