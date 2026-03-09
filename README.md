@@ -1,21 +1,22 @@
 # DACreator
 
-为头文字D：激斗设计的Python程序，可以自动爬取arcadezone网页的计时赛成绩，并生成易于阅读的表格。
+为头文字D：激斗设计的Python程序，可以自动爬取arcadezone网页的计时赛成绩，生成易于阅读的表格，并记录历史数据追踪进步。
+
+B站演示视频：<https://www.bilibili.com/video/BV13SFWzTEnv/>
 
 ---
 
-## ✨ 新特性 - GUI版 v2.0
+## ✨ 最新特性 - v2.1.0
 
-现在除了命令行版本，我们还提供了全新的图形界面版本！
+### 📊 **历史记录数据库**
+- 自动保存所有生成的数据到本地SQLite数据库
+- 支持按赛道筛选查看历史记录
+- 记录每次更新的时间戳，完整追踪进步历程
 
-| 特性 | 说明 |
-|------|------|
-| 🎨 **现代化界面** | 支持Windows深色/浅色主题自动切换 |
-| 📊 **实时进度** | 进度条+日志输出，不再干等 |
-| 🔍 **三种模式** | 爬取模式/搜索模式/本地CSV可选 |
-| ⏱️ **耗时统计** | 详细显示各阶段处理时间 |
-| 🚀 **C++启动器** | 更快的启动速度，自动环境检测 |
-| 📦 **安装包支持** | 提供安装包 |
+### 🔄 **智能去重**
+- 相同记录自动跳过，避免重复
+- 记录更新时保留历史版本，形成完整时间线
+- 为未来进步趋势分析打下基础
 
 ---
 
@@ -23,9 +24,9 @@
 
 ### 方法一：使用安装包（推荐）
 
-从 [Releases](https://github.com/GuitaristRin/DACreator/releases) 下载最新版本：
+从 [Releases](https://github.com/GuitaristRin/DACreator-GUI/releases) 下载最新版本：
 
-`DACreator_v2.0.0_Windows_x64_Setup.exe`
+`DACreator_v2.1.0_Windows_x64_Setup.exe`
 
 **包含内容：**
 - ✅ C++启动器
@@ -33,6 +34,7 @@
 - ✅ 爬虫核心
 - ✅ 资源文件（字体、等级图片）
 - ✅ 配置文件模板
+- ✅ SQLite数据库支持（自动创建）
 
 ### 方法二：绿色版（源代码）
 
@@ -48,6 +50,9 @@ cd DACreator
 
 # 安装依赖
 pip install -r requirements.txt
+
+# 启动GUI
+python dacreator_gui.py
 ```
 
 ---
@@ -59,12 +64,14 @@ pip install -r requirements.txt
 ```ini
 ID = 你的用户名
 SEASON = 5
+VERSION = 2.1.0
 ```
 
 | 配置项 | 说明 | 示例 |
 |--------|------|------|
 | `ID` | ArcadeZone用户名 | 高橋リンタ |
 | `SEASON` | 赛季（1-10） | 5 |
+| `VERSION` | 程序版本（自动维护） | 2.1.0 |
 
 ---
 
@@ -89,6 +96,8 @@ python dacreator_gui.py
 | 页面 | 功能 |
 |------|------|
 | 🏠 **主页** | 选择工作模式、开始生成、查看进度 |
+| 📋 **数据** | 查看历史记录、按赛道筛选、追踪进步 |
+| 📦 **版本** | 检查更新、查看版本信息 |
 | ⚙️ **设置** | 配置ID、地区、城市、店铺名、赛季 |
 | ℹ️ **关于** | 版本信息、开发者列表、依赖库 |
 
@@ -106,11 +115,14 @@ python dacreator_gui.py
 |------|------|
 | `DACreator.exe` | C++编译的启动器（主程序） |
 | `dacreator_gui.py` | GUI主程序 |
+| `database.py` | SQLite数据库管理模块 |
 | `core.py` | 命令行主程序，图片生成核心 |
 | `spider.py` | 爬虫核心（遍历模式，含排名） |
 | `spider_search.py` | 搜索爬虫（快速模式，无排名） |
+| `update.py` | 自动更新模块 |
 | `Player_ID.dat` | 用户配置文件 |
 | `requirements.txt` | Python依赖列表 |
+| `dacreator_history.db` | SQLite历史数据库（自动生成） |
 | `assets/` | 资源文件夹（字体、等级图片） |
 | `installer/` | 安装包输出目录 |
 
@@ -150,11 +162,18 @@ g++ -o DACreator.exe launcher.cpp -mwindows
 ```bash
 build_installer.bat
 ```
-输出：`installer/DACreator_v2.0.0_Windows_x64_Setup.exe`
+输出：`installer/DACreator_v2.1.0_Windows_x64_Setup.exe`
 
 ---
 
 ## 📝 更新日志
+
+### v2.1.0 (2026-03-09)
+- ✨ **新增**：SQLite历史数据库，自动保存所有记录
+- 📋 **新增**：数据页面，可查看历史记录并按赛道筛选
+- 🔄 **新增**：智能去重，相同记录自动跳过
+- 🗃️ **新增**：database.py 数据库管理模块
+- 📊 **优化**：为未来进步趋势分析打下基础
 
 ### v2.0.0 (2026-03-08)
 - ✨ **新增**：图形界面版本
@@ -189,19 +208,28 @@ C++启动器使用MinGW编译，PyInstaller打包的特征可能导致误报。
 - 虚拟环境创建约需1-2分钟
 - 请耐心等待命令行窗口完成
 
-### 4. 免责声明
+### 4. 历史数据库
+- 数据库文件 `dacreator_history.db` 自动生成在程序目录
+- 所有记录永久保存，不会自动删除
+- 可手动备份或删除该文件重置数据
+
+### 5. 免责声明
 此程序仅供学习参考，**严禁用于商业用途**！
 
 ---
 
 
-- **项目主页**：<https://github.com/GuitaristRin/DACreator>
-
----
-
 ## 📄 许可证
 
 本项目遵循 **MIT License**。
 
+```
+MIT License
+
+Copyright (c) 2026 GuitaristRin
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files...
+```
 
 **如果喜欢这个项目，欢迎给个Star ⭐！**
