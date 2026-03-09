@@ -5,3 +5,4 @@ LOCALE = 店铺所在地区
 CITY = 店铺所在城市
 SEASON = 5
 ROUND = 4
+VERSION =2.0.0
