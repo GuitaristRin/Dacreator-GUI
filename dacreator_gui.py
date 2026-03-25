@@ -7,17 +7,17 @@ DACreator GUI 完整版
 - 流畅的动画效果
 - 使用 Emoji 替代图标
 - 本地微软雅黑字体
-- 对接爬虫核心模块
+- 对接爬虫核心模块 (method/spider, method/search)
 - 实时进度显示
 - 多语言支持 (从assets/lang/动态加载)
-- 集成更新功能
-- 历史记录数据库
+- 集成更新功能 (extras/update)
+- 历史记录数据库 (extras/database)
+- 直接使用系统Python环境运行
 """
 
 import sys
 import os
 import subprocess
-import site
 import logging
 import time
 import json
@@ -26,7 +26,6 @@ import tempfile
 from typing import List, Optional, Dict
 from datetime import datetime
 import threading
-import database
 
 # 依赖列表
 REQUIRED_PACKAGES = [
@@ -48,91 +47,12 @@ def setup_logging():
     )
 
 
-def is_in_virtualenv() -> bool:
-    return hasattr(sys, 'real_prefix') or (
-        hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix
-    )
-
-
-def get_venv_python() -> str:
-    if sys.platform == "win32":
-        return os.path.join("venv", "Scripts", "python.exe")
-    else:
-        return os.path.join("venv", "bin", "python")
-
-
-def create_activation_script():
-    if sys.platform == "win32":
-        with open("run_gui.bat", "w", encoding="utf-8") as f:
-            f.write("""@echo off
-chcp 65001 > nul
-echo 正在激活虚拟环境...
-call venv\\Scripts\\activate.bat
-echo 启动 DACreator GUI...
-python dacreator_gui.py --venv-activated
-pause
-""")
-        print("✅ 已创建 run_gui.bat，下次请双击此文件运行")
-
-
-def ensure_virtualenv_and_dependencies():
-    if "--venv-activated" in sys.argv:
-        print("✅ 已在虚拟环境中，继续启动...")
-        return True
-
-    venv_python = get_venv_python()
-    venv_exists = os.path.exists(venv_python)
-
+def check_and_install_dependencies():
+    """检查并安装缺失的依赖（直接使用系统Python）"""
     print("\n" + "="*60)
-    print("DACreator 环境检查")
+    print("DACreator 依赖检查")
     print("="*60)
-
-    if not venv_exists:
-        print("📦 未检测到虚拟环境，正在创建 venv ...")
-        try:
-            subprocess.run([sys.executable, '-m', 'venv', 'venv'], check=True)
-            print("✅ 虚拟环境创建成功")
-        except subprocess.CalledProcessError as e:
-            print(f"❌ 创建虚拟环境失败：{e}")
-            input("\n按回车键退出...")
-            sys.exit(1)
-
-        print("\n📥 正在安装依赖，请稍候...")
-        print(f"镜像源：{PYPI_MIRROR}")
-        pip_cmd = [venv_python, '-m', 'pip', 'install', '-i', PYPI_MIRROR] + REQUIRED_PACKAGES
-        try:
-            subprocess.run(pip_cmd, check=True)
-            print("✅ 依赖安装完成")
-        except subprocess.CalledProcessError as e:
-            print(f"❌ 依赖安装失败：{e}")
-            input("\n按回车键退出...")
-            sys.exit(1)
-
-        create_activation_script()
-
-        print("\n" + "="*60)
-        print("✅ 虚拟环境已准备就绪！")
-        print("请双击 run_gui.bat 来启动程序")
-        print("="*60)
-        input("\n按回车键退出...")
-        sys.exit(0)
-
-    if not is_in_virtualenv():
-        print("⚠️  当前未在虚拟环境中")
-        print("\n请使用以下方式启动程序：")
-        print("1. 双击 run_gui.bat（推荐）")
-        print("2. 或手动激活虚拟环境后运行：")
-        if sys.platform == "win32":
-            print("   venv\\Scripts\\activate")
-            print("   python dacreator_gui.py --venv-activated")
-        
-        if not os.path.exists("run_gui.bat"):
-            create_activation_script()
-        
-        input("\n按回车键退出...")
-        sys.exit(0)
-
-    print("✅ 已在虚拟环境中，检查依赖完整性...")
+    
     missing = []
     for pkg in REQUIRED_PACKAGES:
         try:
@@ -140,23 +60,29 @@ def ensure_virtualenv_and_dependencies():
                 __import__('PyQt5')
             else:
                 __import__(pkg.replace('-', '_'))
+            print(f"✅ {pkg} 已安装")
         except ImportError:
-            print(f"  缺失：{pkg}")
+            print(f"⚠️ 缺失：{pkg}")
             missing.append(pkg)
-
+    
     if missing:
         print(f"\n📥 检测到缺失依赖：{missing}，正在安装...")
+        print(f"镜像源：{PYPI_MIRROR}")
+        
+        # 尝试使用 pip 安装缺失的包
         pip_cmd = [sys.executable, '-m', 'pip', 'install', '-i', PYPI_MIRROR] + missing
         try:
             subprocess.run(pip_cmd, check=True)
             print("✅ 依赖安装完成")
         except subprocess.CalledProcessError as e:
             print(f"❌ 依赖安装失败：{e}")
+            print("\n请手动运行以下命令安装依赖：")
+            print(f"pip install -i {PYPI_MIRROR} " + " ".join(REQUIRED_PACKAGES))
             input("\n按回车键退出...")
             sys.exit(1)
     else:
         print("✅ 所有依赖已安装")
-
+    
     print("="*60 + "\n")
     return True
 
@@ -180,19 +106,25 @@ try:
     )
 except ImportError as e:
     print(f"❌ 导入 PyQt5 失败：{e}")
+    print("\n请运行以下命令安装 PyQt5：")
+    print(f"pip install -i {PYPI_MIRROR} PyQt5")
     input("\n按回车键退出...")
     sys.exit(1)
 
 # 导入核心模块
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 try:
-    from spider import crawl_data
-    from spider_search import crawl_data_by_search
+    # 从 method 子目录导入爬虫和搜索函数
+    from method.spider import crawl_data
+    from method.search import crawl_data_by_search
+    # 从根目录导入 core 绘图函数
     from core import save_table_image, CONFIG as CORE_CONFIG
-    import update  # 导入更新模块
+    # 从 extras 导入数据库和更新模块
+    from extras import database
+    from extras import update
 except ImportError as e:
     print(f"❌ 导入核心模块失败：{e}")
-    print("请确保 spider.py, spider_search.py, core.py, update.py 在同一目录下")
+    print("请确保 method/, extras/, core.py 等文件存在且路径正确")
     input("\n按回车键退出...")
     sys.exit(1)
 
@@ -479,7 +411,7 @@ class UpdateCheckThread(QThread):
 
             # 获取远程版本（使用镜像源）
             self.progress.emit("正在获取远程版本信息...")
-            remote_version = update.get_github_version_with_mirrors(None)  # 传入 None 忽略日志
+            remote_version = update.get_github_version_with_mirrors()
             if not remote_version:
                 self.check_error.emit("无法获取远程版本信息，请检查网络连接。")
                 return
@@ -499,7 +431,7 @@ class UpdateCheckThread(QThread):
 
             # 获取 release 信息
             self.progress.emit("发现新版本！正在获取更新详情...")
-            release_body, download_url = update.get_latest_release_info_with_mirrors(None)
+            release_body, download_url = update.get_latest_release_info_with_mirrors()
 
             if not download_url:
                 self.check_error.emit("无法获取下载链接。")
@@ -1448,7 +1380,7 @@ GitHub: https://github.com/GuitaristRin/DACreator-GUI"""
             self.log(f"✅ {self.lang_manager.get('msg_image_saved', '图片已保存')}：{save_path}")
 
             try:
-                database.insert_records(df, "csv")
+                database.insert_records_from_df(df, "csv")
                 self.log(f"💾 数据已保存到历史数据库", "success")
             except Exception as e:
                 self.log(f"⚠️ 保存到数据库失败：{str(e)}", "warning")
@@ -1496,8 +1428,8 @@ GitHub: https://github.com/GuitaristRin/DACreator-GUI"""
         self.progress_bar.setValue(100)
 
         try:
-            source = "crawl" if self.mode == 0 else "search" if self.mode == 1 else "csv"
-            database.insert_records(df, source)
+            source = "crawl" if self.worker.mode == 0 else "search" if self.worker.mode == 1 else "csv"
+            database.insert_records_from_df(df, source)
             self.log(f"💾 数据已保存到历史数据库", "success")
         except Exception as e:
             self.log(f"⚠️ 保存到数据库失败：{str(e)}", "warning")
@@ -1796,9 +1728,11 @@ GitHub: https://github.com/GuitaristRin/DACreator-GUI"""
 
 def main():
     """主函数"""
-    if not ensure_virtualenv_and_dependencies():
+    # 检查并安装依赖
+    if not check_and_install_dependencies():
         return
 
+    # 初始化数据库
     database.init_db()
     
     app = QApplication(sys.argv)

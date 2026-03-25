@@ -15,11 +15,12 @@ from tkinter import filedialog, messagebox
 import subprocess
 import platform
 import sys
-from typing import Optional
+from typing import Optional, Tuple
 from datetime import datetime
 import time
+import argparse
 
-# 全局配置
+# 全局配置（保持不变）
 CONFIG = {
     "font_size": 12,
     "header_height": 40,
@@ -56,7 +57,7 @@ CONFIG = {
     "special_col_names": ["タイム", "記録日"],
 }
 
-
+# 以下所有核心函数保持不变
 def format_time(seconds: float) -> str:
     """格式化时间为 分'秒"毫秒 格式"""
     minutes = int(seconds // 60)
@@ -73,6 +74,11 @@ def format_time(seconds: float) -> str:
 def get_timestamp() -> str:
     """获取当前时间戳，格式：YYYYMMDD_HHMMSS"""
     return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+def get_filename_timestamp() -> str:
+    """获取文件名时间戳，格式：YYYYMMDDHHMM（用于CSV文件名）"""
+    return datetime.now().strftime("%Y%m%d%H%M")
 
 
 def load_rank_image(rank_text: str, target_height: int) -> Optional[Image.Image]:
@@ -133,6 +139,8 @@ def create_table_image(df: pd.DataFrame, callback=None) -> Image.Image:
     """
     if callback:
         callback("开始创建表格图片...", "info", 0)
+    else:
+        print("[INFO] 开始创建表格图片...")
     
     # 加载字体
     header_font = load_font("header", 14)
@@ -151,6 +159,8 @@ def create_table_image(df: pd.DataFrame, callback=None) -> Image.Image:
     
     if callback:
         callback(f"创建画布 {total_width//CONFIG['scale']}x{total_height//CONFIG['scale']}", "info", 10)
+    else:
+        print(f"[INFO] 创建画布 {total_width//CONFIG['scale']}x{total_height//CONFIG['scale']}")
     
     img = Image.new("RGB", (total_width, total_height), CONFIG["bg_color"])
     draw = ImageDraw.Draw(img)
@@ -231,6 +241,8 @@ def create_table_image(df: pd.DataFrame, callback=None) -> Image.Image:
     
     if callback:
         callback("缩小图片...", "info", 90)
+    else:
+        print("[INFO] 缩小图片...")
     
     # 缩小回正常尺寸
     img = img.resize(
@@ -240,6 +252,8 @@ def create_table_image(df: pd.DataFrame, callback=None) -> Image.Image:
     
     if callback:
         callback("图片生成完成", "success", 100)
+    else:
+        print("[SUCCESS] 图片生成完成")
     
     return img
 
@@ -258,6 +272,8 @@ def save_table_image(df: pd.DataFrame, save_path: str = None, callback=None) -> 
     
     if callback:
         callback(f"开始生成图片：{save_path}", "info", 0)
+    else:
+        print(f"[INFO] 开始生成图片：{save_path}")
     
     start_time = time.time()
     img = create_table_image(df, callback)
@@ -266,36 +282,129 @@ def save_table_image(df: pd.DataFrame, save_path: str = None, callback=None) -> 
     elapsed = time.time() - start_time
     if callback:
         callback(f"图片已保存：{save_path}，耗时 {format_time(elapsed)}", "success", 100)
+    else:
+        print(f"[SUCCESS] 图片已保存：{save_path}，耗时 {time_str}")
+        print(f"[SAVED] {save_path}")
     
     return save_path
 
 
-# 兼容旧的CLI函数
-def create_table_image_cli(df: pd.DataFrame) -> Image.Image:
-    """兼容CLI的旧函数"""
-    return create_table_image(df)
-
-
-# CLI入口
-if __name__ == "__main__":
-    print("=" * 60)
-    print("DACreator 核心模块 - 命令行版本")
-    print("=" * 60)
+def save_raw_data(df: pd.DataFrame, mode: str) -> str:
+    """
+    保存原始数据到raw目录
+    :param df: DataFrame
+    :param mode: 模式名称（spider/search/localcsv）
+    :return: 保存的CSV路径
+    """
+    # 创建raw目录（如果不存在）
+    raw_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raw")
+    os.makedirs(raw_dir, exist_ok=True)
     
-    # 简单的CLI测试
-    if len(sys.argv) > 1 and sys.argv[1].endswith('.csv'):
-        csv_path = sys.argv[1]
+    # 生成文件名：YYYYMMDDHHMM_mode.csv
+    timestamp = get_filename_timestamp()
+    filename = f"{timestamp}_{mode}.csv"
+    save_path = os.path.join(raw_dir, filename)
+    
+    # 保存CSV
+    df.to_csv(save_path, index=False, encoding="utf-8-sig")
+    print(f"📁 原始数据已保存：{save_path}")
+    
+    return save_path
+
+
+def main():
+    """新的CLI入口：通过参数调度不同的方法"""
+    parser = argparse.ArgumentParser(description="DACreator 核心调度器")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--spider", action="store_true", help="使用爬虫模式（含排名）")
+    group.add_argument("--search", action="store_true", help="使用搜索模式（无排名）")
+    group.add_argument("--localcsv", action="store_true", help="使用本地CSV模式")
+    
+    parser.add_argument("-d", "--dir", help="图片保存目录（不指定则只保存原始CSV到raw目录）")
+    parser.add_argument("csv_file", nargs="?", help="本地CSV文件路径（当使用--localcsv时需要）")
+    
+    args = parser.parse_args()
+    
+    # 确保raw目录存在
+    os.makedirs("raw", exist_ok=True)
+    
+    if args.spider:
         try:
-            df = pd.read_csv(csv_path, encoding="utf-8-sig")
-            print(f"📁 加载CSV：{csv_path}")
-            print(f"📊 数据量：{len(df)} 行")
-            
-            save_path = save_table_image(df)
-            print(f"✅ 图片已保存：{save_path}")
+            from method import spider
+            print("[INFO] 开始爬虫模式...")
+            df = spider.crawl_data()
+            if not df.empty:
+                # 总是保存原始数据
+                raw_path = save_raw_data(df, "spider")
+                print(f"[INFO] 原始数据已保存：{raw_path}")
+
+                # 如果指定了-d参数，则生成图片
+                if args.dir:
+                    os.makedirs(args.dir, exist_ok=True)
+                    timestamp = get_timestamp()
+                    img_path = os.path.join(args.dir, f"DAC成绩表_{timestamp}.png")
+
+                    def progress_callback(msg,level,progress):
+                        print(f"[PROGRESS] {progress}")
+                        print(f"[{level.upper()}] {msg}")
+
+                    save_table_image(df, img_path)
+                    print(f"[SAVED {img_path}")
+                else:
+                    print(f"[INFO] 共获取 {len(df)} 条记录，原始数据已保存")
+            else:
+                print("[ERROR] 未获取到数据")
         except Exception as e:
-            print(f"❌ 处理失败：{str(e)}")
+            print(f"[ERROR] 爬虫执行失败：{e}")
+    elif args.search:
+        try:
+            from method import search
+            print("🔍 开始搜索模式...")
+            df = search.crawl_data_by_search()
+            if not df.empty:
+                # 总是保存原始数据
+                raw_path = save_raw_data(df, "search")
+                
+                # 如果指定了-d参数，则生成图片
+                if args.dir:
+                    os.makedirs(args.dir, exist_ok=True)
+                    timestamp = get_timestamp()
+                    img_path = os.path.join(args.dir, f"DAC成绩表_{timestamp}.png")
+                    save_table_image(df, img_path)
+                    print(f"🖼️ 图片已保存：{img_path}")
+                else:
+                    print(f"📊 共获取 {len(df)} 条记录，原始数据已保存")
+            else:
+                print("未获取到数据")
+        except Exception as e:
+            print(f"搜索执行失败：{e}")
+    elif args.localcsv:
+        if not args.csv_file:
+            parser.error("使用 --localcsv 时必须指定CSV文件路径")
+        try:
+            from method import localcsv
+            print("📁 开始本地CSV模式...")
+            df = localcsv.load_csv(args.csv_file)
+            if not df.empty:
+                # 总是保存原始数据（复制一份到raw目录）
+                raw_path = save_raw_data(df, "localcsv")
+                
+                # 如果指定了-d参数，则生成图片
+                if args.dir:
+                    os.makedirs(args.dir, exist_ok=True)
+                    timestamp = get_timestamp()
+                    img_path = os.path.join(args.dir, f"DAC成绩表_{timestamp}.png")
+                    save_table_image(df, img_path)
+                    print(f"🖼️ 图片已保存：{img_path}")
+                else:
+                    print(f"📊 共处理 {len(df)} 条记录，原始数据已保存")
+            else:
+                print("未读取到数据")
+        except Exception as e:
+            print(f"本地CSV处理失败：{e}")
     else:
-        print("用法：python core.py <csv文件路径>")
-        print("示例：python core.py 成绩表.csv")
-    
-    print()
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()

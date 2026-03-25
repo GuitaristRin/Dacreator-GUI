@@ -1,5 +1,23 @@
+# GUI 相关
 PyQt5>=5.15.0
+PyQt5-sip>=12.13.0
+
+# 数据处理
 pandas>=1.5.0
-requests>=2.25.0
-beautifulsoup4>=4.9.0
+numpy>=1.21.0
+
+# 图片处理
 pillow>=9.0.0
+
+# 网络请求（method模块需要）
+requests>=2.25.0
+urllib3>=1.26.0
+
+# HTML解析（method模块需要）
+beautifulsoup4>=4.9.0
+lxml>=4.6.0  # beautifulsoup4的加速解析器
+
+# 其他工具
+certifi>=2023.0.0  # SSL证书
+charset-normalizer>=2.0.0  # 编码处理
+idna>=3.0.0  # 域名解析
