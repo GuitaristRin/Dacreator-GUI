@@ -1,0 +1,91 @@
+LANG = 조선말
+
+# 창 제목
+window_title = DACreator - 두문자D 격투 성적표 생성기
+
+# 사이드바 메뉴
+menu_home = 홈
+menu_records = 기록
+menu_version = 버전
+menu_settings = 설정
+menu_update = 갱신
+
+# 홈 페이지
+home_title = DACreator
+home_mode_select = 모드 선택
+home_mode_crawl = 크롤 모드 (순위 포함)
+home_mode_search = 검색 모드 (순위 없음)
+home_mode_local = 로컬 CSV에서 그림 생성
+home_csv_file = CSV 파일
+home_csv_placeholder = CSV 파일을 선택하세요...
+home_browse = 찾아보기...
+home_start = 생성 시작
+home_stop = 중지
+home_progress_log = 일지 표시
+
+# 설정 페이지
+settings_title = 설정
+settings_id = ID
+settings_id_placeholder = 례: 후지와라 타쿠미
+settings_region = 지역
+settings_region_placeholder = 례: 관동
+settings_city = 도시
+settings_city_placeholder = 례: 동경
+settings_store = 상점명
+settings_store_placeholder = 례: 게임센터
+settings_season = 시즌
+settings_round = 라운드
+settings_language = 언어
+settings_save = 설정 보관
+settings_save_success = 설정이 보관되었습니다
+
+# 버전 페이지
+version_title = 버전
+version_current = 현재 버전
+version_check_update = 갱신 확인
+version_perform_update = 지금 갱신
+version_latest = 새 버전이 있습니다
+version_no_update = 최신 버전입니다
+version_checking = 갱신 확인 중...
+version_check_failed = 갱신 확인 실패
+
+# 갱신 페이지
+update_title = 갱신
+update_confirm_title = 갱신 확인
+update_confirm_message = 갱신 프로그램이 최신 버전을 내려받고 현재 파일을 대체합니다.\n계속하시겠습니까？
+update_manual_tip = 자동 갱신 기능은 개발 중입니다.\n아래 링크에서 최신 버전을 직접 내려받으십시오:
+
+# 공통
+common_confirm = 확인
+common_cancel = 취소
+common_save = 보관
+common_error = 오류
+common_warning = 경고
+common_success = 성공
+common_complete = 완료
+
+# 일지 레벨
+log_info = 정보
+log_warning = 경고
+log_error = 오류
+log_success = 성공
+
+# 메시지
+msg_select_csv = CSV 파일을 선택하세요
+msg_csv_not_exists = CSV 파일이 존재하지 않습니다
+msg_configure_id = 설정 페이지에서 ID를 구성하십시오
+msg_task_complete = 작업 완료！
+msg_records_count = 기록 수
+msg_time_elapsed = 소요 시간
+msg_image_saved = 그림이 저장되었습니다:
+
+filter_course = 코스
+filter_all = 전체
+record_course = 코스
+record_direction = 방향
+record_time = 시간
+record_rank = 등급
+record_car = 차종
+record_date = 기록 일자
+record_created = 입력 시간
+refresh = 새로고침

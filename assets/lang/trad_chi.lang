@@ -1,0 +1,91 @@
+LANG = 繁體中文
+
+# 窗口標題
+window_title = DACreator - 頭文字D激鬥成績表生成器
+
+# 側邊欄菜單
+menu_home = 主頁
+menu_records = 記錄
+menu_version = 版本
+menu_settings = 設定
+menu_update = 更新
+
+# 主頁
+home_title = DACreator
+home_mode_select = 選擇模式
+home_mode_crawl = 爬取模式（含排名）
+home_mode_search = 搜尋模式（無排名）
+home_mode_local = 本地CSV生成圖片
+home_csv_file = CSV檔案
+home_csv_placeholder = 請選擇CSV檔案...
+home_browse = 瀏覽...
+home_start = 開始生成
+home_stop = 停止
+home_progress_log = 日誌顯示
+
+# 設定頁
+settings_title = 設定
+settings_id = ID
+settings_id_placeholder = 例如：小明小紅
+settings_region = 地區
+settings_region_placeholder = 例如：関東
+settings_city = 城市
+settings_city_placeholder = 例如：東京
+settings_store = 店鋪名
+settings_store_placeholder = 例如：ゲームセンター
+settings_season = 賽季
+settings_round = 回合
+settings_language = 語言
+settings_save = 儲存設定
+settings_save_success = 設定已儲存
+
+# 版本頁
+version_title = 版本
+version_current = 目前版本
+version_check_update = 檢查更新
+version_perform_update = 立即更新
+version_latest = 發現新版本
+version_no_update = 目前已是最新版本
+version_checking = 正在檢查更新...
+version_check_failed = 檢查更新失敗
+
+# 更新頁
+update_title = 更新
+update_confirm_title = 確認更新
+update_confirm_message = 更新程式將下載最新版本並取代目前檔案。\n是否繼續？
+update_manual_tip = 自動更新功能待完善。\n請手動訪問以下連結下載最新版本：
+
+# 通用
+common_confirm = 確認
+common_cancel = 取消
+common_save = 儲存
+common_error = 錯誤
+common_warning = 提示
+common_success = 成功
+common_complete = 完成
+
+# 日誌級別
+log_info = 資訊
+log_warning = 警告
+log_error = 錯誤
+log_success = 成功
+
+# 訊息提示
+msg_select_csv = 請選擇CSV檔案
+msg_csv_not_exists = CSV檔案不存在
+msg_configure_id = 請在設定頁面配置您的ID
+msg_task_complete = 任務完成！
+msg_records_count = 記錄數
+msg_time_elapsed = 耗時
+msg_image_saved = 圖片已儲存至
+
+filter_course = 賽道
+filter_all = 全部
+record_course = 賽道
+record_direction = 方向
+record_time = 時間
+record_rank = 等級
+record_car = 車型
+record_date = 記錄日期
+record_created = 錄入時間
+refresh = 重新整理

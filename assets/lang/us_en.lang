@@ -1,0 +1,91 @@
+LANG = English
+
+# Window Title
+window_title = DACreator - Initial D The Arcade Timetrial Score Generator
+
+# Sidebar Menu
+menu_home = Home
+menu_records = Records
+menu_version = Version
+menu_settings = Settings
+menu_update = Update
+
+# Home Page
+home_title = DACreator
+home_mode_select = Select Mode
+home_mode_crawl = Crawl Mode (With Ranking)
+home_mode_search = Search Mode (No Ranking)
+home_mode_local = Generate from Local CSV
+home_csv_file = CSV File
+home_csv_placeholder = Select CSV file...
+home_browse = Browse...
+home_start = Start
+home_stop = Stop
+home_progress_log = Log
+
+# Settings Page
+settings_title = Settings
+settings_id = ID
+settings_id_placeholder = e.g.: Takumi Fujiwara
+settings_region = Region
+settings_region_placeholder = e.g.: Kanto
+settings_city = City
+settings_city_placeholder = e.g.: Tokyo
+settings_store = Store Name
+settings_store_placeholder = e.g.: Game Center
+settings_season = Season
+settings_round = Round
+settings_language = Language
+settings_save = Save Settings
+settings_save_success = Settings saved
+
+# Version Page
+version_title = Version
+version_current = Current Version
+version_check_update = Check for Updates
+version_perform_update = Update Now
+version_latest = New version found
+version_no_update = Already up to date
+version_checking = Checking for updates...
+version_check_failed = Update check failed
+
+# Update Page
+update_title = Update
+update_confirm_title = Confirm Update
+update_confirm_message = The updater will download the latest version and replace current files.\nContinue?
+update_manual_tip = Auto-update feature is under development.\nPlease visit the following link to download the latest version manually:
+
+# Common
+common_confirm = Confirm
+common_cancel = Cancel
+common_save = Save
+common_error = Error
+common_warning = Warning
+common_success = Success
+common_complete = Complete
+
+# Log Levels
+log_info = Info
+log_warning = Warning
+log_error = Error
+log_success = Success
+
+# Messages
+msg_select_csv = Please select a CSV file
+msg_csv_not_exists = CSV file does not exist
+msg_configure_id = Please configure your ID in Settings page
+msg_task_complete = Task completed!
+msg_records_count = Records
+msg_time_elapsed = Time elapsed
+msg_image_saved = Image saved to
+
+filter_course = Course
+filter_all = All
+record_course = Course
+record_direction = Direction
+record_time = Time
+record_rank = Rank
+record_car = Car
+record_date = Record Date
+record_created = Created Date
+refresh = Refresh

@@ -1,0 +1,91 @@
+LANG = 日本語
+
+# ウィンドウタイトル
+window_title = DACreator - 頭文字D 激闘成績表ジェネレーター
+
+# サイドバーメニュー
+menu_home = ホーム
+menu_records = 記録
+menu_version = バージョン
+menu_settings = 設定
+menu_update = 更新
+
+# ホームページ
+home_title = DACreator
+home_mode_select = モード選択
+home_mode_crawl = クロールモード（ランキング付き）
+home_mode_search = 検索モード（ランキングなし）
+home_mode_local = ローカルCSVから画像生成
+home_csv_file = CSVファイル
+home_csv_placeholder = CSVファイルを選択してください...
+home_browse = 参照...
+home_start = 生成開始
+home_stop = 停止
+home_progress_log = ログ表示
+
+# 設定ページ
+settings_title = 設定
+settings_id = ID
+settings_id_placeholder = 例：藤原拓海
+settings_region = 地域
+settings_region_placeholder = 例：関東
+settings_city = 都市
+settings_city_placeholder = 例：東京
+settings_store = 店舗名
+settings_store_placeholder = 例：ゲームセンター
+settings_season = シーズン
+settings_round = ラウンド
+settings_language = 言語
+settings_save = 設定を保存
+settings_save_success = 設定を保存しました
+
+# バージョンページ
+version_title = バージョン
+version_current = 現在のバージョン
+version_check_update = 更新を確認
+version_perform_update = 今すぐ更新
+version_latest = 新しいバージョンがあります
+version_no_update = 最新バージョンです
+version_checking = 更新を確認中...
+version_check_failed = 更新の確認に失敗しました
+
+# 更新ページ
+update_title = 更新
+update_confirm_title = 更新の確認
+update_confirm_message = 更新プログラムは最新バージョンをダウンロードし、現在のファイルを置き換えます。\n続行しますか？
+update_manual_tip = 自動更新機能は開発中です。\n以下のリンクから最新バージョンを手動でダウンロードしてください：
+
+# 共通
+common_confirm = 確認
+common_cancel = キャンセル
+common_save = 保存
+common_error = エラー
+common_warning = 警告
+common_success = 成功
+common_complete = 完了
+
+# ログレベル
+log_info = 情報
+log_warning = 警告
+log_error = エラー
+log_success = 成功
+
+# メッセージ
+msg_select_csv = CSVファイルを選択してください
+msg_csv_not_exists = CSVファイルが存在しません
+msg_configure_id = 設定ページでIDを設定してください
+msg_task_complete = タスクが完了しました！
+msg_records_count = 記録数
+msg_time_elapsed = 経過時間
+msg_image_saved = 画像を保存しました：
+
+filter_course = コース
+filter_all = すべて
+record_course = コース
+record_direction = 方向
+record_time = タイム
+record_rank = ランク
+record_car = 車種
+record_date = 記録日
+record_created = 登録日
+refresh = 更新
