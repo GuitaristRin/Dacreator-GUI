@@ -1,19 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-DACreator GUI 完整版
-- 支持 Windows 深色/浅色主题自动跟随
-- 流畅的动画效果
-- 使用 Emoji 替代图标
-- 本地微软雅黑字体
-- 对接爬虫核心模块 (method/spider, method/search)
-- 实时进度显示
-- 多语言支持 (从assets/lang/动态加载)
-- 集成更新功能 (extras/update)
-- 历史记录数据库 (extras/database)
-- 直接使用系统Python环境运行
-"""
 
 import sys
 import os
@@ -122,11 +109,76 @@ try:
     # 从 extras 导入数据库和更新模块
     from extras import database
     from extras import update
+    # 从 render 导入成绩卡生成模块
+    from render import TemplateRenderer, select_top_records, parse_round_info, parse_pride_info, parse_team_info, load_player_config
 except ImportError as e:
     print(f"❌ 导入核心模块失败：{e}")
-    print("请确保 method/, extras/, core.py 等文件存在且路径正确")
+    print("请确保 method/, extras/, core.py, render.py 等文件存在且路径正确")
     input("\n按回车键退出...")
     sys.exit(1)
+
+
+def save_player_config_from_settings(settings):
+    """将 QSettings 中的配置写入 Player_ID.dat（适配 spider.py 的格式）"""
+    config_path = "Player_ID.dat"
+    
+    # 获取 GUI 设置的值
+    player_id = settings.value("id", "").strip()
+    region = settings.value("region", "").strip()
+    city = settings.value("city", "").strip()
+    store = settings.value("store", "").strip()
+    season = str(settings.value("season", 5))
+    round_num = str(settings.value("round", 1))
+    
+    # 检查是否填写完整
+    if not all([player_id, region, city, store]):
+        print("⚠️ 警告：玩家信息不完整")
+    
+    # 读取现有配置（保留其他字段）
+    existing_config = {}
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        existing_config[key.strip()] = value.strip()
+        except:
+            pass
+    
+    # 合并配置
+    config = existing_config.copy()
+    config["ID"] = player_id
+    config["REGION"] = region
+    config["CITY"] = city
+    config["STORE"] = store
+    config["TEAM"] = settings.value("team", "").strip()
+    config["SEASON"] = season
+    config["ROUND"] = round_num
+    
+    # 确保 VERSION 存在
+    if "VERSION" not in config:
+        config["VERSION"] = "2.1.2"
+    
+    # 写入配置文件（关键：等号前后加空格，以匹配 spider.py 的解析）
+    try:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            for key, value in config.items():
+                if value:
+                    f.write(f"{key} = {value}\n")  # 注意这里加了空格
+        
+        print(f"✅ 配置文件已更新: {config_path}")
+        print(f"   ID = {player_id}")
+        print(f"   REGION = {region}")
+        print(f"   CITY = {city}")
+        print(f"   STORE = {store}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ 写入配置文件失败: {e}")
+        return False
 
 
 class LanguageManager:
@@ -175,11 +227,7 @@ class LanguageManager:
                 print(f"⚠️ 读取语言文件失败 {lang_file}: {e}")
     
     def load_language(self, lang_code: str) -> bool:
-        """
-        加载指定语言文件
-        :param lang_code: 语言代码 (如: simp_chi, trad_chi, us_en)
-        :return: 是否加载成功
-        """
+        #加载语言
         lang_file = os.path.join(self.lang_dir, f"{lang_code}.lang")
         if not os.path.exists(lang_file):
             print(f"❌ 语言文件不存在：{lang_file}")
@@ -385,6 +433,120 @@ class WorkerThread(QThread):
             
         except Exception as e:
             self.error.emit(str(e))
+
+
+class CardWorkerThread(QThread):
+    """生成简报成绩卡的工作线程"""
+    progress = pyqtSignal(str, str, int)
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
+
+    def __init__(self, save_dir):
+        super().__init__()
+        self.save_dir = save_dir
+
+    def run(self):
+        try:
+            import os
+            import sys
+            from datetime import datetime
+            
+            # 确保在项目根目录
+            project_root = os.path.dirname(os.path.abspath(__file__))
+            original_dir = os.getcwd()
+            os.chdir(project_root)
+            
+            self.progress.emit(f"工作目录: {os.getcwd()}", "info", 0)
+            
+            # 确保项目根目录在 Python 路径中
+            if project_root not in sys.path:
+                sys.path.insert(0, project_root)
+            
+            # 导入所需的函数（全部在 run 方法内部导入，确保线程安全）
+            from method.search import crawl_data_by_search
+            from method.round import get_round_info
+            from method.pride import get_pride_info
+            from method.team import get_team_info
+            from render import TemplateRenderer, select_top_records, parse_round_info, parse_pride_info, parse_team_info, load_player_config
+            
+            self.progress.emit("正在获取计时赛数据...", "info", 0)
+            df = crawl_data_by_search()
+            if df.empty:
+                self.error.emit("未获取到任何计时赛数据")
+                os.chdir(original_dir)
+                return
+
+            self.progress.emit(f"获取到 {len(df)} 条记录", "info", 20)
+            records = select_top_records(df, limit=5)
+            if not records:
+                self.error.emit("未找到有效记录")
+                os.chdir(original_dir)
+                return
+
+            self.progress.emit("正在获取回合分数...", "info", 40)
+            round_info = get_round_info()
+            round_score, round_rank = parse_round_info(round_info)
+            self.progress.emit(f"回合分数: {round_score}", "info", 45)
+
+            self.progress.emit("正在获取名声分数...", "info", 60)
+            pride_info = get_pride_info()
+            pride_val, pride_rank = parse_pride_info(pride_info)
+            self.progress.emit(f"名声分数: {pride_val}", "info", 65)
+
+            self.progress.emit("正在获取车队信息...", "info", 80)
+            team_info = get_team_info()
+            team_score, team_level, team_rank = parse_team_info(team_info)
+            self.progress.emit(f"车队分数: {team_score}, 等级: {team_level}", "info", 85)
+
+            # 使用 render 的配置读取
+            config = load_player_config()
+            user_id = config.get('ID', '未知')
+            store = config.get('STORE', '未知')
+            locale = config.get('REGION', '未知')
+            city = config.get('CITY', '未知')
+            season = config.get('SEASON', '?')
+            round_num = config.get('ROUND', '?')
+            team_name = config.get('TEAM', '未知')
+
+            self.progress.emit(f"玩家: {user_id}, 地区: {locale}", "info", 88)
+
+            # 组装数据
+            data = {
+                'user': {
+                    'id': user_id,
+                    'store': store,
+                    'locale': locale,
+                    'city': city,
+                },
+                'records': records,
+                'season': season,
+                'round': round_num,
+                'round_score': round_score,
+                'pride_value': pride_val,
+                'team': {
+                    'name': team_name,
+                    'score': team_score,
+                    'level': team_level,
+                }
+            }
+
+            self.progress.emit("正在生成图片...", "info", 90)
+            renderer = TemplateRenderer()
+            renderer.render(data)
+
+            output_filename = f"race_card_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+            output_path = os.path.join(self.save_dir, output_filename)
+            renderer.save(output_path)
+
+            os.chdir(original_dir)
+            self.finished.emit(output_path)
+
+        except Exception as e:
+            if 'original_dir' in locals():
+                os.chdir(original_dir)
+            self.error.emit(str(e))
+            import traceback
+            traceback.print_exc()
 
 
 class UpdateCheckThread(QThread):
@@ -757,6 +919,7 @@ class MainWindow(QMainWindow):
         
         # 工作线程
         self.worker = None
+        self.card_worker = None
         self.update_check_thread = None
         self.download_thread = None
         self.latest_download_url = None
@@ -964,7 +1127,7 @@ class MainWindow(QMainWindow):
         self.records_table.resizeColumnsToContents()
     
     def create_version_page(self):
-        """创建版本页（集成更新功能）"""
+        #创建版本页（集成更新功能）
         page = FadeWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(50, 50, 50, 50)
@@ -1072,6 +1235,12 @@ class MainWindow(QMainWindow):
         self.store_edit.setText(self.settings.value("store", ""))
         self.store_edit.setPlaceholderText(self.lang_manager.get("settings_store_placeholder", "例如：ゲームセンター"))
         form_layout.addRow(self.create_label("🏪 " + self.lang_manager.get("settings_store", "店铺") + ":"), self.store_edit)
+
+        # 车队名
+        self.team_edit = QLineEdit()
+        self.team_edit.setText(self.settings.value("team", ""))
+        self.team_edit.setPlaceholderText(self.lang_manager.get("settings_team_placeholder", "例如：Project D"))
+        form_layout.addRow(self.create_label("🚗 " + self.lang_manager.get("settings_team", "车队") + ":"), self.team_edit)
         
         # 赛季
         self.season_spin = QSpinBox()
@@ -1131,7 +1300,7 @@ class MainWindow(QMainWindow):
         # 如果内容为空，显示默认信息
         if not about_content:
             about_content = """DACreator 成绩表生成工具
-版本 2.0.0 (GUI版)
+版本 2.1.2 (GUI版)
 
 为头文字D：激斗设计的爬虫工具，可自动抓取ArcadeZone的计时赛成绩并生成可视化表格。
 
@@ -1198,7 +1367,8 @@ GitHub: https://github.com/GuitaristRin/DACreator-GUI"""
         self.func_combo.addItems([
             "🌐 " + self.lang_manager.get("home_mode_crawl", "爬取模式（含排名）"),
             "🔍 " + self.lang_manager.get("home_mode_search", "搜索模式（无排名）"),
-            "📁 " + self.lang_manager.get("home_mode_local", "本地CSV模式")
+            "📁 " + self.lang_manager.get("home_mode_local", "本地CSV模式"),
+            "🎴 " + self.lang_manager.get("home_mode_card", "生成简报成绩卡")
         ])
         if 0 <= current_index < self.func_combo.count():
             self.func_combo.setCurrentIndex(current_index)
@@ -1265,7 +1435,7 @@ GitHub: https://github.com/GuitaristRin/DACreator-GUI"""
     
     def on_mode_changed(self, index):
         """模式改变时的处理"""
-        # 模式2（本地CSV）显示文件选择容器
+        # 模式2（本地CSV）显示文件选择容器，新模式（3）不显示
         self.csv_container.setVisible(index == 2)
     
     def select_csv_file(self):
@@ -1299,7 +1469,7 @@ GitHub: https://github.com/GuitaristRin/DACreator-GUI"""
         """开始生成按钮点击事件"""
         mode = self.func_combo.currentIndex()
         
-        # 验证输入
+        # 验证输入（仅对本地CSV模式需要）
         if mode == 2:  # 本地CSV模式
             csv_path = self.csv_path_edit.text().strip()
             if not csv_path:
@@ -1330,8 +1500,10 @@ GitHub: https://github.com/GuitaristRin/DACreator-GUI"""
         
         if mode == 2:  # 本地CSV模式
             self.process_local_csv(csv_path, save_dir)
+        elif mode == 3:  # 生成简报成绩卡模式
+            self.start_card_generation(save_dir)
         else:
-            # 检查ID
+            # 原有爬取/搜索模式
             user_id = self.id_edit.text().strip()
             if not user_id:
                 QMessageBox.warning(self, 
@@ -1352,6 +1524,58 @@ GitHub: https://github.com/GuitaristRin/DACreator-GUI"""
             self.worker.finished.connect(self.on_task_finished)
             self.worker.error.connect(self.on_task_error)
             self.worker.start()
+    
+    def start_card_generation(self, save_dir):
+        """启动简报成绩卡生成"""
+        # 检查用户设置是否完整
+        id_val = self.id_edit.text().strip()
+        region_val = self.region_edit.text().strip()
+        city_val = self.city_edit.text().strip()
+        store_val = self.store_edit.text().strip()
+
+        print(f"调试信息 - GUI 设置:")
+        print(f"  ID: {id_val}")
+        print(f"  REGION: {region_val}")
+        print(f"  CITY: {city_val}")
+        print(f"  STORE: {store_val}")
+        
+        if not all([id_val, region_val, city_val, store_val]):
+            QMessageBox.warning(self, 
+                               self.lang_manager.get("common_warning", "提示"),
+                               "请先在设置页面填写完整的玩家信息（ID、地区、城市、店铺）")
+            self.sidebar.list_widget.setCurrentRow(3)  # 跳转到设置页
+            self.start_btn.setEnabled(True)
+            self.stop_btn.setEnabled(False)
+            self.func_combo.setEnabled(True)
+            self.progress_bar.setVisible(False)
+            return
+
+        # 将设置写入 Player_ID.dat
+        print("正在写入配置文件...")
+        success = save_player_config_from_settings(self.settings)
+
+        if not success:
+            QMessageBox.warning(self, "警告", "配置文件写入失败，请检查权限")
+            self.start_btn.setEnabled(True)
+            self.stop_btn.setEnabled(False)
+            self.func_combo.setEnabled(True)
+            self.progress_bar.setVisible(False)
+            return
+
+            # 验证配置文件
+        print("验证配置文件内容...")
+        try:
+            with open("Player_ID.dat", 'r', encoding='utf-8') as f:
+                print(f.read())
+        except Exception as e:
+            print(f"读取配置文件失败: {e}")
+
+        # 启动工作线程
+        self.card_worker = CardWorkerThread(save_dir)
+        self.card_worker.progress.connect(self.on_progress)
+        self.card_worker.finished.connect(self.on_card_finished)
+        self.card_worker.error.connect(self.on_task_error)
+        self.card_worker.start()
     
     def process_local_csv(self, csv_path, save_dir):
         """处理本地CSV文件"""
@@ -1406,6 +1630,11 @@ GitHub: https://github.com/GuitaristRin/DACreator-GUI"""
             self.worker.terminate()
             self.worker.wait()
             self.log("⏹️ " + self.lang_manager.get("home_stop", "停止"), "warning")
+        
+        if self.card_worker and self.card_worker.isRunning():
+            self.card_worker.terminate()
+            self.card_worker.wait()
+            self.log("⏹️ " + self.lang_manager.get("home_stop", "停止"), "warning")
             
         self.start_btn.setEnabled(True)
         self.stop_btn.setEnabled(False)
@@ -1441,6 +1670,21 @@ GitHub: https://github.com/GuitaristRin/DACreator-GUI"""
         QMessageBox.information(self, 
                                self.lang_manager.get("common_complete", "完成"),
                                f"{self.lang_manager.get('msg_task_complete', '任务完成')}\n{self.lang_manager.get('msg_records_count', '记录数')}：{len(df)}\n{self.lang_manager.get('msg_time_elapsed', '耗时')}：{time_str}")
+        
+        # 3秒后隐藏进度条
+        QTimer.singleShot(3000, lambda: self.progress_bar.setVisible(False))
+    
+    def on_card_finished(self, image_path):
+        """卡片生成完成"""
+        self.progress_bar.setValue(100)
+        self.log(f"✅ 成绩卡已生成：{image_path}", "success")
+        self.start_btn.setEnabled(True)
+        self.stop_btn.setEnabled(False)
+        self.func_combo.setEnabled(True)
+        
+        QMessageBox.information(self, 
+                               self.lang_manager.get("common_complete", "完成"),
+                               f"成绩卡已保存：\n{image_path}")
         
         # 3秒后隐藏进度条
         QTimer.singleShot(3000, lambda: self.progress_bar.setVisible(False))
@@ -1586,6 +1830,7 @@ GitHub: https://github.com/GuitaristRin/DACreator-GUI"""
         self.settings.setValue("id", self.id_edit.text())
         self.settings.setValue("region", self.region_edit.text())
         self.settings.setValue("city", self.city_edit.text())
+        self.settings.setValue("team", self.team_edit.text())
         self.settings.setValue("store", self.store_edit.text())
         self.settings.setValue("season", self.season_spin.value())
         self.settings.setValue("round", self.round_spin.value())
