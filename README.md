@@ -1,3 +1,8 @@
+> [!WARNING]
+> **本仓库已停止维护，代码已合并进 [DACreator](https://github.com/GuitaristRin/DACreator)（v3 · Go + Rust 重写版）。**
+> v3 将 CLI 与 GUI 合二为一，提供单文件 exe、成绩卡、历史记录与自动更新，请前往新仓库下载使用。
+> 感谢每一位使用过 GUI 版的玩家。
+
 # DACreator
 
 为头文字D：激斗设计的Python程序，可以自动爬取arcadezone网页的计时赛成绩，生成易于阅读的表格，并记录历史数据追踪进步。
